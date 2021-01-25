@@ -24,7 +24,7 @@ env = gym.make(env_mcar)
 print("what we see of low", env.observation_space.low)
 print("what we see of high", env.observation_space.high)
 
-logging.basicConfig(filename="./data/q_learning_r_raise_with_max_x.log_ep_raise_add_curious", level=logging.INFO)
+logging.basicConfig(filename="./data/q_learning_1.log", level=logging.INFO)
 
 class RL_QLearning(object):
     def __init__(self, envname, learning_rate=0.1, gamma=0.99, epsilon=0.8):
@@ -61,7 +61,7 @@ class RL_QLearning(object):
         if (x, v) in self.q_table:
             q_predict = max(self.q_table.get((x, v)))
         else:
-            self.q_table[(x, v)] = [0, 0]
+            self.q_table[(x, v)] = [0, 0, 0]
             q_predict = 0
         if not isterminal:
             x_, v_ = self.discrete_obs(s_)
@@ -79,7 +79,7 @@ class RL_QLearning(object):
             qa_lst = self.q_table[self.discrete_obs(s)]
             a_chosed = qa_lst.index(max(qa_lst))
         else:
-            a_chosed = np.random.choice([0, 1])
+            a_chosed = np.random.choice([0, 1, 2])
         return a_chosed
 
 if __name__ =="__main__":
@@ -87,27 +87,34 @@ if __name__ =="__main__":
     n_episode = 5000
     agent = RL_QLearning(envname=env_mcar)
     mean_10 = []
+
     for i_episode in range(n_episode):
         max_x = 0
         obs = agent.reset_env()
-        new_ep = 0.8 + (i_episode)//100*0.005
+        new_ep = 0.8 + 0.2**((n_episode-i_episode)//500)
         agent.set_ep(new_ep)
         acc_r = 0
+        max_r = -float('inf')
         acc_step = 0
+        action_set = dict()
         while True:
             agent.render_env()
-
             action = agent.choose_action(obs)
+            if action not in action_set:
+                action_set[action] = 1
+            else:
+                action_set[action] += 1
             obs_, reward, done, _ = agent.step(action)
-            #if math.fabs(obs_[0]) > math.fabs(env.observation_space.high[0])/4:
-            #    reward += 0.5
-            # reward += 0.95*math.fabs(math.fabs(obs_[0])-math.fabs(obs[0]))\
-            #           /(env.observation_space.high[0]-env.observation_space.low[0])
+            reward += 100*math.fabs(math.fabs(obs_[0])-math.fabs(obs[0]))\
+                      /(env.observation_space.high[0]-env.observation_space.low[0])
+            if reward>0.2:
+                reward = 0.2
             if agent.is_new(obs_):
                 reward += 0.1
-
             if math.fabs(obs_[0]) > max_x:
                 max_x = math.fabs(obs_[0])
+            if reward>max_r:
+                max_r =reward
             agent.learn(obs, action, reward, obs_, isterminal=done)
             acc_r += reward
             acc_step += 1
@@ -117,7 +124,7 @@ if __name__ =="__main__":
                     mean_10.append(max_x)
                 else:
                     mean_10[i_episode%10]=max_x
-                info = "episode {} after step:{} ep:{:.4f} we get:{:.4f} max x :{:.4f}, max-mean7: {:.4f}".format(i_episode,acc_step,new_ep,acc_r,max_x,np.mean(mean_10))
+                info = "episode {} step:{} ep:{:.4f} we get:{:.2f} max_r {:.2f} max x :{:.2f}, max-mean7: {:.2f},action: {}".format(i_episode,acc_step,new_ep,acc_r,max_r,max_x,np.mean(mean_10),action_set)
                 print(info)
                 logging.info(info)
                 if i_episode % 100 == 0:
