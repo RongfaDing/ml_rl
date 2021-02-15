@@ -4,9 +4,10 @@ import time
 env_name = 'Breakout-v0'
 env_walkman = 'BipedalWalker-v3'
 env_mcar = 'MountainCar-v0'
+
 env = gym.make(env_mcar)
 n_episodes = 100
-print("action space:", env.action_space)
+print("action space:", env.action_space, env.action_space.shape)
 print("what we see of low", env.observation_space.low)
 print("what we see of high", env.observation_space.high)
 
@@ -24,7 +25,7 @@ for i_episode in range(n_episodes):
     obs = env.reset()
     while True:
         env.render()
-        print("what we see:{} -->{}".format(obs,discrete_obs(obs)))
+        print("what we see:{} -->{}".format(obs, discrete_obs(obs)))
         action = env.action_space.sample()
         print("what we do:", action)
         obs, reward, done, _ = env.step(action)
@@ -34,5 +35,5 @@ for i_episode in range(n_episodes):
         if done:
             print("failed !!")
             break
-    print("total step:{} reward:{}".format(acc_step,acc_r))
+    print("total step:{} reward:{}".format(acc_step, acc_r))
 
